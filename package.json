@@ -5,7 +5,6 @@
   "dependencies": {
     "bootstrap": "^4.3.1",
     "gisida": "^1.0.1",
-    "gisida-react": "^1.0.1",
     "node-sass": "^4.11.0",
     "react": "^16.8.2",
     "react-dom": "^16.8.2",
