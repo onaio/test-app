@@ -14,7 +14,7 @@ const getSlice = (token) => {
   SUPERSET.API.fetch({
     endpoint: 'slice',
     extraPath: '892',
-    // supersetToken: (token || '1MI2BMkaZIg01cwSm7g5CknxeEASl5'), // comment out to remove Custom-Api-Token header
+    supersetToken: (token || '1MI2BMkaZIg01cwSm7g5CknxeEASl5'), // comment out to remove Custom-Api-Token header
   }, (res) => {
     console.log('yay!', res)
     // debugger;
