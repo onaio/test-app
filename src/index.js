@@ -33,9 +33,11 @@ const getCookie = (token) => {
   headers.append('Custom-Api-Token', (token || '1MI2BMkaZIg01cwSm7g5CknxeEASl5')); // comment out to remove Custom-Api-Token header
   fetch('http://localhost:8088/oauth-authorized/onadata', {
     headers, // comment to remove Custom-Api-Token header
-    method: 'GET'
+    method: 'GET',
+    credentials: 'include'
   }).then((res) => {
-    console.log('res', res)
+    console.log('res ~~~', res)
+    window.authZres = res;
   }).catch((err) => {
     console.log('err', err);
   })
