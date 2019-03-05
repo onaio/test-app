@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { ONA } from 'gisida';
-import { Container, Row, Col, Form, FormGroup, Button, InputGroup, Input, InputGroupAddon } from 'reactstrap';
+import { Container, Row, Col, Form, FormGroup, Button, InputGroup, Input, InputGroupAddon, Alert } from 'reactstrap';
 import './App.css';
 
 const AUTH_CONFIG = {
@@ -37,11 +37,50 @@ class App extends Component {
 
   render() {
     const { isLoggedIn, oauthURL, accessToken } = this.state;
+    const self = this;
+
+    
+    const customRequestFetchHandler = (res) => {
+      console.log('custom requested!', res)
+      if (!res || !res.status) return false;
+      let status;
+      let message = `${res.status}: `;
+      switch (res.status) {
+        case 200:
+        case 302:
+          status = 'success';
+          if (res.status === 302) {
+            message = message + 'Ok but request was redirected!'
+          } else {
+            message = message + 'All clear!'
+          }
+          break;
+        case 401:
+        case 404:
+          status = 'warning'
+          if (res.status === 401) {
+            message = message + 'Unauthorized!!'
+          } else {
+            message = message + 'Page not found...';
+          }
+          break;
+        default: 
+          status = 'danger';
+          message = message + 'Somethinging went wrong...?'
+      }
+
+      self.setState({ 
+        customRequestStatus: status,
+        customRequestMessage: message,
+      })
+    }
+
 
     const loggedInView = (
       <div>
         <h1>Logged In!</h1>
         <Form>
+          {/* Ona access token */}
           <FormGroup>
             <InputGroup>
               <InputGroupAddon addonType="prepend">onadata access_token</InputGroupAddon>
@@ -49,12 +88,14 @@ class App extends Component {
               <Input disabled id="access-token-input" value={accessToken}></Input>
             </InputGroup>
           </FormGroup>
+
+          {/* AuthZ & Resource Request Buttons*/}
           <FormGroup>
             <Button
             color="primary"
             onClick={(e) => {
               e.preventDefault();
-              this.props.getCookie(accessToken);
+              self.props.getCookie(accessToken);
             }}
           >AuthZ Request</Button>
           {' '}
@@ -66,6 +107,33 @@ class App extends Component {
             }}
           >Slice Request</Button>
           </FormGroup>
+
+          {/* Custom Superset path  */}
+          <FormGroup>
+            <InputGroup>
+              <InputGroupAddon addonType="prepend">{`http://localhost:8088/`}</InputGroupAddon>
+              <Input innerRef={(input) => this.customPathInput = input} />
+              <Button
+                color="primary"
+                onClick={(e) => {
+                  e.preventDefault();
+                  const url = `http://localhost:8088/${this.customPathInput.value}`;
+                  fetch(url, {
+                    method: 'GET',
+                    credentials: 'include',
+                  }).then(customRequestFetchHandler).catch((err) => {
+                    console.log('custom connection error', err);
+                    self.setState({ 
+                      customRequestStatus: 'danger',
+                      customRequestMessage: `Fetch Error: ${err}`,
+                    })
+                  })
+                }}>Fetch!</Button>
+            </InputGroup>
+          </FormGroup>
+          {this.state.customRequestStatus ? (
+            <Alert color={this.state.customRequestStatus}>{this.state.customRequestMessage}</Alert>
+          ) : ''}
         </Form>
 
         
