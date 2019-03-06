@@ -42,7 +42,7 @@ class App extends Component {
     
     const customRequestFetchHandler = (res) => {
       console.log('custom requested!', res)
-      if (!res || !res.status) return false;
+      if (!res || !res.status) return res;
       let status;
       let message = `${res.status}: `;
       switch (res.status) {
@@ -73,6 +73,7 @@ class App extends Component {
         customRequestStatus: status,
         customRequestMessage: message,
       })
+      return res;
     }
 
 
@@ -89,13 +90,19 @@ class App extends Component {
             </InputGroup>
           </FormGroup>
 
+          {this.state.isSupersetAuth ? (
+            <Alert color="success">Supserset AuthZ!</Alert>
+          ) : ''}
+
           {/* AuthZ & Resource Request Buttons*/}
           <FormGroup>
             <Button
             color="primary"
             onClick={(e) => {
               e.preventDefault();
-              self.props.getCookie(accessToken);
+              self.props.getCookie({
+                token: accessToken
+              }, (res) => self.setState({ isSupersetAuth: res.status === 200 }) );
             }}
           >AuthZ Request</Button>
           {' '}
@@ -103,7 +110,7 @@ class App extends Component {
             color="primary"
             onClick={(e) => {
               e.preventDefault();
-              this.props.getSlice(accessToken);
+              this.props.getSlice();
             }}
           >Slice Request</Button>
           </FormGroup>
@@ -118,10 +125,16 @@ class App extends Component {
                 onClick={(e) => {
                   e.preventDefault();
                   const url = `http://localhost:8088/${this.customPathInput.value}`;
+                  const headers = new Headers();
+                  headers.append('Custom-Api-Token', self.state.accessToken);
                   fetch(url, {
                     method: 'GET',
                     credentials: 'include',
-                  }).then(customRequestFetchHandler).catch((err) => {
+                    headers,
+                  }).then(customRequestFetchHandler).then(res => res.json())
+                  .then(response => {
+                    console.log('BODY RESPONSE', response);
+                  }).catch((err) => {
                     console.log('custom connection error', err);
                     self.setState({ 
                       customRequestStatus: 'danger',
