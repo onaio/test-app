@@ -90,8 +90,12 @@ class App extends Component {
             </InputGroup>
           </FormGroup>
 
-          {this.state.isSupersetAuth ? (
+          {this.state.supersetAuthStatus === 200 ? (
             <Alert color="success">Supserset AuthZ!</Alert>
+          ) : typeof this.state.supersetAuthStatus === 'string' ? (
+            <Alert color="danger">{`Supserset AuthZ Failed: ${this.state.supersetAuthStatus}`}</Alert>
+          ) : this.state.supersetAuthStatus === 301 ||this.state.supersetAuthStatus === 302 ? (
+            <Alert color="success">Supserset AuthZ Failed: OPTIONS was Redirected</Alert>
           ) : ''}
 
           {/* AuthZ & Resource Request Buttons*/}
@@ -102,7 +106,7 @@ class App extends Component {
               e.preventDefault();
               self.props.getCookie({
                 token: accessToken
-              }, (res) => self.setState({ isSupersetAuth: res.status === 200 }) );
+              }, (res) => { self.setState({ supersetAuthStatus: res.status || res.message }) });
             }}
           >AuthZ Request</Button>
           {' '}
@@ -110,10 +114,19 @@ class App extends Component {
             color="primary"
             onClick={(e) => {
               e.preventDefault();
-              this.props.getSlice();
+              this.props.getSlice((res) =>
+                self.setState({ supersetSliceReqStatus: res.status || res.message || res.error }));
             }}
           >Slice Request</Button>
           </FormGroup>
+
+          {!this.state.supersetSliceReqStatus ? '' : this.state.supersetSliceReqStatus === 401 ? (
+            <Alert color="danger">Slice Request Failed: Unauthorized</Alert>
+          ) : (
+            <Alert color={this.state.supersetSliceReqStatus === 200 ? 'success' : 'warning'}>
+              {`Slice Request: ${this.state.supersetSliceReqStatus}`}
+            </Alert>
+          )}
 
           {/* Custom Superset path  */}
           <FormGroup>
@@ -157,8 +170,16 @@ class App extends Component {
           color="secondary"
           onClick={(e) => {
             e.preventDefault();
-            localStorage.removeItem('access_token');
-            window.location.href = AUTH_CONFIG.callback;
+
+            self.props.deAuthZ({
+              base: 'http://localhost:8088/'
+            }, () => self.setState({
+              supersetAuthStatus: false,
+              supersetSliceReqStatus: false,
+            }, () => {
+              localStorage.removeItem('access_token');
+              window.location.href = AUTH_CONFIG.callback;
+            }))
           }}
         >Log Out</Button>
       </div>
